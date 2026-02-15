@@ -1,0 +1,68 @@
+# Image Object Detection and Text-to-Speech Inference using Google Gemini and Hugging Face Transformers
+
+from transformers import pipeline
+from PIL import Image
+import os
+import torch
+import soundfile as sf
+import google.generativeai as genai
+
+# Constants
+INPUT_IMAGE_PATH = "TestData/image_2.jpeg"
+GEMINI_MODEL = "gemini-3-flash-preview" 
+API_KEY_FILE = "TestData/googleapi.txt"
+TTS_MODEL = "microsoft/speecht5_tts"
+SPEAKER_EMBEDDING_DIM = 512
+
+# Read API key from file
+with open(API_KEY_FILE, 'r') as f:
+    GOOGLE_API_KEY = f.read().strip()
+
+# Configure Google AI
+genai.configure(api_key=GOOGLE_API_KEY)
+
+# take input from file
+input_img1 = Image.open(INPUT_IMAGE_PATH)
+
+#Inference - Object Detection using Gemini
+print(">>Loading Gemini model for object detection...")
+model = genai.GenerativeModel(GEMINI_MODEL)
+
+# Create a prompt for object detection
+prompt = """You are a helpful AI Assistant. Given an image perform object detection and provide a text output which contains the information about the labels detected and their counts.."""
+
+print(">>Sending image to Gemini for object detection...")
+response = model.generate_content([prompt, input_img1])
+response_text = response.text.strip()
+
+print(f">>Raw Gemini response:\n{response_text}\n")
+
+#Inference - Text to Speech
+narration1 = (pipeline(task="text-to-speech", 
+model=TTS_MODEL))
+
+# Create default speaker embeddings (512-dimensional vector)
+speaker_embeddings = torch.randn(1, 512)
+
+# Truncate response_text to fit TTS model's input limit (around 600 characters)
+text_to_narrate = response_text[:600] if len(response_text) > 600 else response_text
+
+# Pass speaker embeddings to the pipeline - narrate the Gemini response
+narrated_text = narration1(text_to_narrate, forward_params={"speaker_embeddings": speaker_embeddings})
+
+print(f">>Narrated Text: {narrated_text}")
+
+# Save the audio to a file
+sf.write("output_audio.wav", narrated_text["audio"], narrated_text["sampling_rate"])
+print(">>Audio saved as 'output_audio.wav'")
+
+# Play the audio using the default system player (Windows)
+os.startfile("output_audio.wav")
+
+
+# # Deletion of the python objects
+# del classifier1
+# import gc
+# print(">>Objects deleted:", gc.collect())
+
+
