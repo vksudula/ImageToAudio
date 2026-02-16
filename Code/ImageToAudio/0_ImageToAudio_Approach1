@@ -3,8 +3,7 @@
 from transformers import pipeline
 from PIL import Image
 from collections import Counter
-from IPython.display import Audio as IPythonAudio
-from PIL import ImageDraw, ImageFont
+from PIL import ImageDraw
 import os
 import torch
 import soundfile as sf
@@ -26,7 +25,6 @@ model=OBJECT_DETECTION_MODEL))
 print(">>Object Detection Model loaded successfully!")
 
 result1 = obj_detector1(input_img1)
-# print(f">>Results of input image 1: {result1[:4]}") # print only first 4 results
 
 # print the image with bounding boxes
 draw = ImageDraw.Draw(input_img1)
@@ -55,10 +53,8 @@ narration1 = (pipeline(task="text-to-speech",
 model=TTS_MODEL))
 
 # Create default speaker embeddings (512-dimensional vector)
-# This is a workaround since the dataset can't be loaded
+# Actual speaker embeddings load failed. so using random embeddings for demo.
 speaker_embeddings = torch.randn(1, 512)
-
-# Pass speaker embeddings to the pipeline
 narrated_text = narration1(labels1_text, forward_params={"speaker_embeddings": speaker_embeddings})
 
 print(f">>Narrated Text: {narrated_text}")
@@ -70,12 +66,7 @@ print(">>Audio saved as 'output_audio.wav'")
 # Play the audio using the default system player (Windows)
 os.startfile("output_audio.wav")
 
-# play the audio - remove [0] indexing
-# IPythonAudio(narrated_text["audio"], rate=narrated_text["sampling_rate"], autoplay=True)
-
 # # Deletion of the python objects
 # del classifier1
 # import gc
 # print(">>Objects deleted:", gc.collect())
-
-
